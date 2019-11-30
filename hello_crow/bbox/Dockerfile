@@ -17,7 +17,7 @@ RUN git clone https://github.com/mongodb/mongo-c-driver.git \
 && make && make install && ldconfig /usr/local/lib
 
 RUN git clone https://github.com/mongodb/mongo-cxx-driver.git \
---branch releases/stable --depth 1 \
+--branch releases/v3.2 --depth 1 \
 && cd mongo-cxx-driver/build && cmake \
 -DBSONCXX_POLY_USE_MNMLSTC=1 \
 -DCMAKE_BUILD_TYPE=Release \

@@ -195,6 +195,9 @@ hello_crow_BINARY_DIR:STATIC=/usr/src/cppweb/hello_crow/build
 //Value Computed by CMake
 hello_crow_SOURCE_DIR:STATIC=/usr/src/cppweb/hello_crow
 
+//The directory containing a CMake configuration file for libmongocxx.
+libmongocxx_DIR:PATH=libmongocxx_DIR-NOTFOUND
+
 
 ########################
 # INTERNAL cache entries
