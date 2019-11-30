@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
-FIND_PACKAGE(Threads)
+find_package(Threads)
 
 include_directories(${Boost_INCLUDE_DIRS})
 add_executable(hello_crow main.cpp)
