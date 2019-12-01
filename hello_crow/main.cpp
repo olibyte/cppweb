@@ -129,6 +129,14 @@ int main(int argc, char *argv[])
         return getView("contacts", dto);
     });
 
+    CROW_ROUTE(app, "/rest_test").methods(HTTPMethod::Post, HTTPMethod::Get, HTTPMethod::Put)
+        ([](const request &req, response &res){
+            string method = method_name(req.method);
+            res.set_header("Content-Type", "text/plain");
+            res.write(method + " rest_test");
+            res.end();
+        });
+
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res) {
         sendHtml(res, "index");
