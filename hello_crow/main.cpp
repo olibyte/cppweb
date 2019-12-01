@@ -151,6 +151,24 @@ int main(int argc, char *argv[])
         getView(res, "contacts", dto);
     });
 
+    CROW_ROUTE(app, "/api/contacts")
+    ([&collection](const request &req) {
+        mongocxx::options::find opts;
+        opts.skip(9);
+        opts.limit(10);
+        auto docs = collection.find({}, opts);
+        vector<crow::json::rvalue> contacts;
+        contacts.reserve(10);
+
+        for (auto doc : docs)
+        {
+            contacts.push_back(json::load(bsoncxx::to_json(doc)));
+        }
+        crow::json::wvalue dto;
+        dto["contacts"] = contacts;
+        return crow::response{dto};
+    });
+
     CROW_ROUTE(app, "/add/<int>/<int>")
     ([](const request &req, response &res, int a, int b) {
         res.set_header("Content-Type", "text/plain");
@@ -179,15 +197,14 @@ int main(int argc, char *argv[])
     });
 
     CROW_ROUTE(app, "/query")
-    ([](const request &req, response &res){
-      auto firstname = req.url_params.get("firstname");
-      auto lastname = req.url_params.get("lastname");
-      ostringstream os;
-      os << "Hello "<< (firstname? firstname: "") <<
-        " " << (lastname? lastname: "") << endl;
-      res.set_header("Content-Type", "text/plain");
-      res.write(os.str());
-      res.end();
+    ([](const request &req, response &res) {
+        auto firstname = req.url_params.get("firstname");
+        auto lastname = req.url_params.get("lastname");
+        ostringstream os;
+        os << "Hello " << (firstname ? firstname : "") << " " << (lastname ? lastname : "") << endl;
+        res.set_header("Content-Type", "text/plain");
+        res.write(os.str());
+        res.end();
     });
 
     CROW_ROUTE(app, "/rest_test").methods(HTTPMethod::Post, HTTPMethod::Get, HTTPMethod::Put)([](const request &req, response &res) {
