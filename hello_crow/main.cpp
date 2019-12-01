@@ -28,9 +28,12 @@ using namespace std;
 using namespace crow;
 using namespace crow::mustache;
 
-string getView(const string &filename, context &x)
+void getView(response &res, const string &filename, context &x)
 {
-    return load("../public/" + filename + ".html").render(x);
+    res.set_header("Content-Type", "text/html");
+    auto text = load("../public/" + filename + ".html").render(x);
+    res.write(text);
+    res.end();
 }
 
 void sendFile(response &res, string filename, string contentType)
@@ -71,6 +74,12 @@ void sendStyle(response &res, string filename)
 {
     sendFile(res, "styles/" + filename, "text/css");
 }
+void notFound(response &res, const string &message)
+{
+    res.code = 404;
+    res.write(message + ": Not Found");
+    res.end();
+}
 
 int main(int argc, char *argv[])
 {
@@ -104,15 +113,28 @@ int main(int argc, char *argv[])
     });
 
     CROW_ROUTE(app, "/contact/<string>")
-        ([&collection](string email){
-            auto doc = collection.find_one(make_document(kvp("email", email)));
-            crow::json::wvalue dto;
-            dto["contact"] = json::load(bsoncxx::to_json(doc.value().view()));
-            return getView("contact", dto);
-        });
+    ([&collection](const request &req, response &res, string email) {
+        auto doc = collection.find_one(make_document(kvp("email", email)));
+        crow::json::wvalue dto;
+        dto["contact"] = json::load(bsoncxx::to_json(doc.value().view()));
+        getView(res, "contact", dto);
+    });
+
+    CROW_ROUTE(app, "/contact/<string>/<string>")
+    ([&collection](const request &req, response &res, string firstname, string lastname) {
+        auto doc = collection.find_one(
+            make_document(kvp("firstName", firstname), kvp("lastName", lastname)));
+        if (!doc)
+        {
+            return notFound(res, "Contact");
+        }
+        crow::json::wvalue dto;
+        dto["contact"] = json::load(bsoncxx::to_json(doc.value().view()));
+        getView(res, "contact", dto);
+    });
 
     CROW_ROUTE(app, "/contacts")
-    ([&collection]() {
+    ([&collection](const request &req, response &res) {
         mongocxx::options::find opts;
         opts.skip(9);
         opts.limit(10);
@@ -126,16 +148,42 @@ int main(int argc, char *argv[])
             contacts.push_back(json::load(bsoncxx::to_json(doc)));
         }
         dto["contacts"] = contacts;
-        return getView("contacts", dto);
+        getView(res, "contacts", dto);
     });
 
-    CROW_ROUTE(app, "/rest_test").methods(HTTPMethod::Post, HTTPMethod::Get, HTTPMethod::Put)
-        ([](const request &req, response &res){
-            string method = method_name(req.method);
-            res.set_header("Content-Type", "text/plain");
-            res.write(method + " rest_test");
-            res.end();
-        });
+    CROW_ROUTE(app, "/add/<int>/<int>")
+    ([](const request &req, response &res, int a, int b) {
+        res.set_header("Content-Type", "text/plain");
+        ostringstream os;
+        os << "Integer: " << a << " + " << b << " = " << a + b << "\n";
+        res.write(os.str());
+        res.end();
+    });
+
+    CROW_ROUTE(app, "/add/<double>/<double>")
+    ([](const request &req, response &res, double a, double b) {
+        res.set_header("Content-Type", "text/plain");
+        ostringstream os;
+        os << "Double: " << a << " + " << b << " = " << a + b << "\n";
+        res.write(os.str());
+        res.end();
+    });
+
+    CROW_ROUTE(app, "/add/<string>/<string>")
+    ([](const request &req, response &res, string a, string b) {
+        res.set_header("Content-Type", "text/plain");
+        ostringstream os;
+        os << "String: " << a << " + " << b << " = " << a + b << "\n";
+        res.write(os.str());
+        res.end();
+    });
+
+    CROW_ROUTE(app, "/rest_test").methods(HTTPMethod::Post, HTTPMethod::Get, HTTPMethod::Put)([](const request &req, response &res) {
+        string method = method_name(req.method);
+        res.set_header("Content-Type", "text/plain");
+        res.write(method + " rest_test");
+        res.end();
+    });
 
     CROW_ROUTE(app, "/")
     ([](const request &req, response &res) {
